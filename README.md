@@ -51,7 +51,7 @@ dolphin()->benchmark(1000);
 ```
 
 ```shell script
-mysql : XXX
+mysql : 0.03287492121384
 file : 0.11837792396545
 ```
 
@@ -111,7 +111,9 @@ return [
 | store                     | `true`                     | keep accessed cache items stored in PHP memory for faster recurring access |
 | store-ignore              | ``                         | if key contains that string then ignore                                    |
 | host                      | `127.0.0.1`                | string or callback                                                         |
+ | unix_socket               | `null`                     | string or callback                                                         |
 | dbname                    | `kirby3-mysql-cachedriver` | string or callback                                                         |
+| tablename                 | `kirby3-mysql-cachedriver` | string or callback                                                         |
 | username                  | `root`                     | string or callback                                                         |
 | password                  | ``                         | string or callback                                                         |
 | port                      | `3306`                     | int or callback                                                            |

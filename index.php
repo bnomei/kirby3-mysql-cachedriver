@@ -19,10 +19,12 @@ Kirby::plugin('bnomei/mysql-cachedriver', [
         'store' => true, // php memory cache
         'store-ignore' => '', // if contains then ignore
         'host' => '127.0.0.1',
+        'unix_socket' => null,
+        'port' => 3306,
         'dbname' => 'kirby3-mysql-cachedriver',
+        'tablename' => 'kirby3-mysql-cachedriver',
         'username' => 'root',
         'password' => '',
-        'port' => 3306,
 ],
     'cacheTypes' => [
         'sqlite' => \Bnomei\MySQLCache::class

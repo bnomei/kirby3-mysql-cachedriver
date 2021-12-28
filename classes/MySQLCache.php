@@ -55,8 +55,16 @@ final class MySQLCache extends FileCache
 
         $this->loadDatabase();
 
-        $dbname = $this->option('dbname');
-        $this->database->exec('CREATE TABLE IF NOT EXISTS '. $dbname .' (id TEXT primary key unique, expire_at INTEGER, data TEXT)');
+
+        $this->database->exec(
+            'CREATE TABLE '.$this->dbtbl().' (
+                `id` VARCHAR(512) NOT NULL,
+                `expire_at` INT NULL,
+                `data` MEDIUMTEXT NULL,
+                `key` INT NOT NULL AUTO_INCREMENT,
+                PRIMARY KEY (`key`),
+                UNIQUE INDEX `key_UNIQUE` (`key` ASC) VISIBLE);'
+        );
 
         $this->prepareStatements();
         $this->store = [];
@@ -68,6 +76,14 @@ final class MySQLCache extends FileCache
         }
 
         $this->garbagecollect();
+    }
+
+    public function dbtbl() :string
+    {
+        $dbname = $this->option('dbname');
+        $tablename = $this->option('tablename') . '_' . static::DB_VERSION;
+
+        return '`'.$dbname.'`.`'.$tablename.'`';
     }
 
     public function register_shutdown_function($callback) {
@@ -128,15 +144,11 @@ final class MySQLCache extends FileCache
             $this->updateStatement->bindValue(':expire_at', $expire ?? 0, PDO::PARAM_INT);
             $this->updateStatement->bindValue(':data', $data, PDO::PARAM_STR);
             $this->updateStatement->execute();
-            //$this->updateStatement->clear();
-            //$this->updateStatement->reset();
         } else {
             $this->insertStatement->bindValue(':id', $key, PDO::PARAM_STR);
             $this->insertStatement->bindValue(':expire_at', $expire ?? 0, PDO::PARAM_INT);
             $this->insertStatement->bindValue(':data', $data, PDO::PARAM_STR);
             $this->insertStatement->execute();
-            //$this->insertStatement->clear();
-            //$this->insertStatement->reset();
         }
 
         if ($this->option('store') && (empty($this->option('store-ignore')) || str_contains($key, $this->option('store-ignore')) === false)) {
@@ -151,9 +163,8 @@ final class MySQLCache extends FileCache
         $key = $this->key($key);
 
         $this->selectStatement->bindValue(':id', $key, PDO::PARAM_STR);
-        $results = $this->selectStatement->fetchAll();
-        //$this->selectStatement->clear();
-        //$this->selectStatement->reset();
+        $this->selectStatement->execute();
+        $results = $this->selectStatement->fetch();
 
         return $results !== false;
     }
@@ -168,9 +179,8 @@ final class MySQLCache extends FileCache
         $value = A::get($this->store, $key);
         if ($value === null) {
             $this->selectStatement->bindValue(':id', $key, PDO::PARAM_STR);
-            $results = $this->selectStatement->fetchAll();
-            //$this->selectStatement->clear();
-            //$this->selectStatement->reset();
+            $this->selectStatement->execute();
+            $results = $this->selectStatement->fetch();
             if ($results === false) {
                 return null;
             }
@@ -206,8 +216,6 @@ final class MySQLCache extends FileCache
 
         $this->deleteStatement->bindValue(':id', $key, PDO::PARAM_STR);
         $this->deleteStatement->execute();
-        //$this->deleteStatement->clear();
-        //$this->deleteStatement->reset();
 
         return true;
     }
@@ -218,15 +226,16 @@ final class MySQLCache extends FileCache
     public function flush(): bool
     {
         $this->store = [];
-        kirby()->cache('bnomei.sqlite-cachedriver')->remove(static::DB_VALIDATE . static::DB_VERSION);
-        $success = $this->database->exec("DELETE FROM cache WHERE id != '' ");
+        $success = $this->database->exec("DELETE FROM ".$this->dbtbl()." WHERE `id` != '' ");
 
         return $success && $success > 0;
     }
 
     public function garbagecollect(): bool
     {
-        return $this->database->exec("DELETE FROM cache WHERE expire_at > 0 AND expire_at <= " . time());
+        $success = $this->database->exec("DELETE FROM ".$this->dbtbl()." WHERE `expire_at` > 0 AND `expire_at` <= " . time());
+
+        return $success && $success > 0;
     }
 
     private static $singleton;
@@ -241,9 +250,19 @@ final class MySQLCache extends FileCache
 
     private function loadDatabase()
     {
-        $file = $this->file(static::DB_FILENAME . static::DB_VERSION);
         try {
-            $this->database = new SQLite3($file);
+            $socket = $this->option('unix_socket');
+            $dns = [
+                $socket ? 'mysql:unix_socket=' . $socket
+                        : 'mysql:host=' . $this->option('host'),
+                'dbname=' . $this->option('dbname'),
+                'port=' . $this->option('port'),
+            ];
+            $this->database = new PDO(
+                implode(';', $dns),
+                $this->option('username'),
+                $this->option('password')
+            );
         } catch (\Exception $exception) {
             throw new \Exception($exception->getMessage());
         }
@@ -267,15 +286,24 @@ final class MySQLCache extends FileCache
             'debug' => \option('debug'),
             'store' => \option('bnomei.mysql-cachedriver.store', true),
             'store-ignore' => \option('bnomei.mysql-cachedriver.store-ignore'),
+            'host' => \option('bnomei.mysql-cachedriver.host'),
+            'unix_socket' => \option('bnomei.mysql-cachedriver.unix_socket'),
+            'port' => \option('bnomei.mysql-cachedriver.port'),
+            'dbname' => \option('bnomei.mysql-cachedriver.dbname'),
+            'tablename' => \option('bnomei.mysql-cachedriver.tablename'),
+            'username' => \option('bnomei.mysql-cachedriver.username'),
+            'password' => \option('bnomei.mysql-cachedriver.password'),
         ], $options);
 
         foreach ($this->options as $key => $call) {
             if (!is_string($call) && is_callable($call) && in_array($key, [
                     'host',
+                    'unix_socket',
+                    'port',
                     'dbname',
-                    'user',
+                    'tablename',
+                    'username',
                     'password',
-                    'port'
                 ])) {
                 $this->options[$key] = $call();
             }
@@ -304,10 +332,10 @@ final class MySQLCache extends FileCache
 
     private function prepareStatements()
     {
-        $this->selectStatement = $this->database->prepare("SELECT data FROM cache WHERE id = :id");
-        $this->insertStatement = $this->database->prepare("INSERT INTO cache (id, expire_at, data) VALUES (:id, :expire_at, :data)");
-        $this->deleteStatement = $this->database->prepare("DELETE FROM cache WHERE id = :id");
-        $this->updateStatement = $this->database->prepare("UPDATE cache SET expire_at = :expire_at, data = :data WHERE id = :id");
+        $this->selectStatement = $this->database->prepare('SELECT `data` FROM '.$this->dbtbl().' WHERE `id` = :id');
+        $this->insertStatement = $this->database->prepare('INSERT INTO '.$this->dbtbl().' (`id`, `expire_at`, `data`) VALUES (:id, :expire_at, :data)');
+        $this->deleteStatement = $this->database->prepare('DELETE FROM '.$this->dbtbl().' WHERE id = :id');
+        $this->updateStatement = $this->database->prepare('UPDATE '.$this->dbtbl().' SET `expire_at` = :expire_at, `data` = :data WHERE `id` = :id');
     }
 
     public function hasOpenTransaction(): bool
@@ -318,7 +346,7 @@ final class MySQLCache extends FileCache
     public function benchmark(int $count = 10)
     {
         $prefix = "mysql-benchmark-";
-        $sqlite = $this;
+        $mysql = $this;
         $file = kirby()->cache('bnomei.mysql-cachedriver'); // neat, right? ;-)
 
         foreach (['mysql' => $mysql, 'file' => $file] as $label => $driver) {

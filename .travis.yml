@@ -1,7 +1,7 @@
 language: php
 php: 7.4
 services:
-  - redis-server
+  - mysql
 matrix:
   fast_finish: true
 install: composer install --no-interaction
