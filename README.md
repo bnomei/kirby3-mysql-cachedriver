@@ -1,4 +1,4 @@
-# Kirby3 MySQL Cache-Driver
+# 🐬 Kirby3 MySQL Cache-Driver
 
 ![Release](https://flat.badgen.net/packagist/v/bnomei/kirby3-mysql-cachedriver?color=ae81ff)
 ![Downloads](https://flat.badgen.net/packagist/dt/bnomei/kirby3-mysql-cachedriver?color=272822)
