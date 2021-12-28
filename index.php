@@ -27,6 +27,6 @@ Kirby::plugin('bnomei/mysql-cachedriver', [
         'password' => '',
 ],
     'cacheTypes' => [
-        'sqlite' => \Bnomei\MySQLCache::class
+        'mysql' => \Bnomei\MySQLCache::class
     ],
 ]);
