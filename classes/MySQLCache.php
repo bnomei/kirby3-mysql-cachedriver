@@ -57,7 +57,7 @@ final class MySQLCache extends FileCache
 
 
         $this->database->exec(
-            'CREATE TABLE '.$this->dbtbl().' (
+            'CREATE TABLE IF NOT EXISTS '.$this->dbtbl().' (
                 `id` VARCHAR(512) NOT NULL,
                 `expire_at` INT NULL,
                 `data` MEDIUMTEXT NULL,
