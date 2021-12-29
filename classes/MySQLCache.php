@@ -69,8 +69,6 @@ final class MySQLCache extends FileCache
         $this->prepareStatements();
         $this->store = [];
 
-        $this->beginTransaction();
-
         if ($this->options['debug']) {
             $this->flush();
         }
@@ -86,20 +84,20 @@ final class MySQLCache extends FileCache
         return '`'.$dbname.'`.`'.$tablename.'`';
     }
 
-    public function register_shutdown_function($callback) {
+    public function register_shutdown_function($callback)
+    {
         $this->shutdownCallbacks[] = $callback;
     }
 
     public function __destruct()
     {
-        foreach($this->shutdownCallbacks as $callback) {
+        foreach ($this->shutdownCallbacks as $callback) {
             if (!is_string($callback) && is_callable($callback)) {
                 $callback();
             }
         }
 
         if ($this->database) {
-            $this->endTransaction();
             // $this->database->close();
             $this->database = null;
         }
@@ -256,8 +254,11 @@ final class MySQLCache extends FileCache
                 $socket ? 'mysql:unix_socket=' . $socket
                         : 'mysql:host=' . $this->option('host'),
                 'dbname=' . $this->option('dbname'),
-                'port=' . $this->option('port'),
+                $socket ? 'port=' . $this->option('port') : null,
             ];
+            $dns = array_filter($dns, function ($item) {
+                return !$item;
+            });
             $this->database = new PDO(
                 implode(';', $dns),
                 $this->option('username'),
