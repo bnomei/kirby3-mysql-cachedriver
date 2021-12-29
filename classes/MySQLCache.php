@@ -162,7 +162,7 @@ final class MySQLCache extends FileCache
 
         $this->selectStatement->bindValue(':id', $key, PDO::PARAM_STR);
         $this->selectStatement->execute();
-        $results = $this->selectStatement->fetch();
+        $results = $this->selectStatement->fetch(PDO::FETCH_ASSOC);
 
         return $results !== false;
     }
@@ -178,7 +178,7 @@ final class MySQLCache extends FileCache
         if ($value === null) {
             $this->selectStatement->bindValue(':id', $key, PDO::PARAM_STR);
             $this->selectStatement->execute();
-            $results = $this->selectStatement->fetch();
+            $results = $this->selectStatement->fetch(PDO::FETCH_ASSOC);
             if ($results === false) {
                 return null;
             }
@@ -257,7 +257,7 @@ final class MySQLCache extends FileCache
                 $socket ? 'port=' . $this->option('port') : null,
             ];
             $dns = array_filter($dns, function ($item) {
-                return !$item;
+                return $item !== null;
             });
             $this->database = new PDO(
                 implode(';', $dns),
