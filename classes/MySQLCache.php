@@ -63,7 +63,7 @@ final class MySQLCache extends FileCache
                 `data` MEDIUMTEXT NULL,
                 `key` INT NOT NULL AUTO_INCREMENT,
                 PRIMARY KEY (`key`),
-                UNIQUE INDEX `key_UNIQUE` (`key` ASC) VISIBLE);'
+                UNIQUE INDEX `key_UNIQUE` (`key` ASC));'
         );
 
         $this->prepareStatements();
