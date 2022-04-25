@@ -249,20 +249,37 @@ final class MySQLCache extends FileCache
     private function loadDatabase()
     {
         try {
-            $socket = $this->option('unix_socket');
-            $dns = [
-                $socket ? 'mysql:unix_socket=' . $socket
-                        : 'mysql:host=' . $this->option('host'),
-                'dbname=' . $this->option('dbname'),
-                $socket ? 'port=' . $this->option('port') : null,
-            ];
-            $dns = array_filter($dns, function ($item) {
-                return $item !== null;
-            });
+            $username = $this->option('username');
+            $password = $this->option('password');
+            $dbname = $this->option('dbname');
+            $dns = [];
+            
+            if ($socket = $this->option('unix_socket')) {
+                $dns = [
+                    'mysql:unix_socket=' . $socket,
+                    'port=' . $this->option('port'),
+                ];
+            } else {
+                $dns = [
+                    'mysql:host=' . $this->option('host')
+                ];
+            }
+
+            // create db IF NOT EXISTS
             $this->database = new PDO(
                 implode(';', $dns),
-                $this->option('username'),
-                $this->option('password')
+                $username,
+                $password
+            );
+            $this->database->exec("CREATE DATABASE IF NOT EXISTS `$dbname`;")
+            or die(print_r($this->database->errorInfo(), true));
+
+            // connect to db
+            $dns[] = 'dbname=' . $dbname;
+            $this->database = new PDO(
+                implode(';', $dns),
+                $username,
+                $password
             );
         } catch (\Exception $exception) {
             throw new \Exception($exception->getMessage());
