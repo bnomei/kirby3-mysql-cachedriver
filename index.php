@@ -18,6 +18,9 @@ Kirby::plugin('bnomei/mysql-cachedriver', [
         'cache' => true, // create cache folder
         'store' => true, // php memory cache
         'store-ignore' => '', // if contains then ignore
+        'transaction' => [
+            'limit' => 4096, // exec transaction after n SET commands
+        ],
         'host' => '127.0.0.1',
         'unix_socket' => null,
         'port' => 3306,

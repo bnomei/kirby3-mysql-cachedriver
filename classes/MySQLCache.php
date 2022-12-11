@@ -7,7 +7,7 @@ namespace Bnomei;
 use Kirby\Cache\FileCache;
 use Kirby\Cache\Value;
 use Kirby\Toolkit\A;
-use Kirby\Toolkit\F;
+use Kirby\Filesystem\F;
 use Kirby\Toolkit\Str;
 use PDO;
 use PDOStatement;
@@ -45,7 +45,7 @@ final class MySQLCache extends FileCache
     /**
      * @var int
      */
-    private $transactionOpen = false;
+    private $transactionCount = 0;
 
     public function __construct(array $options = [])
     {
@@ -76,7 +76,7 @@ final class MySQLCache extends FileCache
         $this->garbagecollect();
     }
 
-    public function dbtbl() :string
+    public function dbtbl(): string
     {
         $dbname = $this->option('dbname');
         $tablename = $this->option('tablename') . '_' . static::DB_VERSION;
@@ -153,6 +153,15 @@ final class MySQLCache extends FileCache
             $this->store[$key] = $value;
         }
 
+        if ($this->hasOpenTransaction()) {
+            $this->transactionCount++;
+        }
+
+        if ($this->transactionsCount >= intval($this->option('transaction_limit'))) {
+            $this->endTransaction();
+            $this->beginTransaction();
+        }
+
         return true;
     }
 
@@ -224,7 +233,9 @@ final class MySQLCache extends FileCache
     public function flush(): bool
     {
         $this->store = [];
-        $success = $this->database->exec("DELETE FROM ".$this->dbtbl()." WHERE `id` != '' ");
+
+        $prefix = $this->key('');
+        $success = $this->database->exec("DELETE FROM ".$this->dbtbl()." WHERE `id` LIKE '".$prefix."%' ");
 
         return $success && $success > 0;
     }
@@ -253,7 +264,7 @@ final class MySQLCache extends FileCache
             $password = $this->option('password');
             $dbname = $this->option('dbname');
             $dns = [];
-            
+
             if ($socket = $this->option('unix_socket')) {
                 $dns = [
                     'mysql:unix_socket=' . $socket,
@@ -271,8 +282,9 @@ final class MySQLCache extends FileCache
                 $username,
                 $password
             );
-            $this->database->exec("CREATE DATABASE IF NOT EXISTS `$dbname`;")
-            or die(print_r($this->database->errorInfo(), true));
+            $this->database->exec("CREATE DATABASE IF NOT EXISTS `$dbname`;");
+            // OR DIE will throw error if db exists with mariadv. so this will not work...
+            // or die(print_r($this->database->errorInfo(), true));
 
             // connect to db
             $dns[] = 'dbname=' . $dbname;
@@ -304,6 +316,7 @@ final class MySQLCache extends FileCache
             'debug' => \option('debug'),
             'store' => \option('bnomei.mysql-cachedriver.store', true),
             'store-ignore' => \option('bnomei.mysql-cachedriver.store-ignore'),
+            'transaction_limit' => intval(\option('bnomei.transaction.limit')),
             'host' => \option('bnomei.mysql-cachedriver.host'),
             'unix_socket' => \option('bnomei.mysql-cachedriver.unix_socket'),
             'port' => \option('bnomei.mysql-cachedriver.port'),
@@ -330,22 +343,22 @@ final class MySQLCache extends FileCache
 
     public function beginTransaction()
     {
-        if ($this->transactionOpen === true) {
+        if ($this->transactionCount > 0) {
             return;
         }
 
         $this->database->beginTransaction();
-        $this->transactionOpen = true;
+        $this->transactionCount = 1;
     }
 
     public function endTransaction()
     {
-        if ($this->transactionOpen === false) {
+        if ($this->transactionCount === 0) {
             return;
         }
 
         $this->database->commit();
-        $this->transactionOpen = false;
+        $this->transactionCount = 0;
     }
 
     private function prepareStatements()
@@ -358,7 +371,7 @@ final class MySQLCache extends FileCache
 
     public function hasOpenTransaction(): bool
     {
-        return $this->transactionOpen;
+        return $this->transactionCount > 0;
     }
 
     public function benchmark(int $count = 10)
