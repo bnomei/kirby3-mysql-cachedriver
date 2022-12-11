@@ -14,7 +14,7 @@ use PDOStatement;
 
 final class MySQLCache extends FileCache
 {
-    public const DB_VERSION = '1';
+    public const DB_VERSION = '2';
 
     private $shutdownCallbacks = [];
 
@@ -55,15 +55,14 @@ final class MySQLCache extends FileCache
 
         $this->loadDatabase();
 
-
         $this->database->exec(
             'CREATE TABLE IF NOT EXISTS '.$this->dbtbl().' (
                 `id` VARCHAR(512) NOT NULL,
                 `expire_at` INT NULL,
                 `data` MEDIUMTEXT NULL,
-                `key` INT NOT NULL AUTO_INCREMENT,
-                PRIMARY KEY (`key`),
-                UNIQUE INDEX `key_UNIQUE` (`key` ASC));'
+                `incr` INT NOT NULL AUTO_INCREMENT,
+                PRIMARY KEY (`id`),
+                UNIQUE INDEX `id_UNIQUE` (`id` ASC));'
         );
 
         $this->prepareStatements();
@@ -157,7 +156,7 @@ final class MySQLCache extends FileCache
             $this->transactionCount++;
         }
 
-        if ($this->transactionsCount >= intval($this->option('transaction_limit'))) {
+        if ($this->transactionCount >= intval($this->option('transaction_limit'))) {
             $this->endTransaction();
             $this->beginTransaction();
         }
