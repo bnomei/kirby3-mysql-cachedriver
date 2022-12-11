@@ -110,6 +110,7 @@ return [
 |---------------------------|----------------------------|----------------------------------------------------------------------------|
 | store                     | `true`                     | keep accessed cache items stored in PHP memory for faster recurring access |
 | store-ignore              | ``                         | if key contains that string then ignore                                    |
+| transaction.limit         | `4096`                     | exec transaction after n SET operations                                    |
 | host                      | `127.0.0.1`                | string or callback                                                         |
 | unix_socket               | `null`                     | string or callback                                                         |
 | dbname                    | `kirby3-mysql-cachedriver` | string or callback (will be created if it does not exists)                 |
