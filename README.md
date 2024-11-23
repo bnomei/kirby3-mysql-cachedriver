@@ -7,7 +7,7 @@
 [![Maintainability](https://flat.badgen.net/codeclimate/maintainability/bnomei/kirby3-mysql-cachedriver)](https://codeclimate.com/github/bnomei/kirby3-mysql-cachedriver) 
 [![Twitter](https://flat.badgen.net/badge/twitter/bnomei?color=66d9ef)](https://twitter.com/bnomei)
 
-Dolphin - a MySQL Cache Driver for Kirby 3
+Dolphin - a MySQL Cache Driver for Kirby
 
 ## Installation
 
