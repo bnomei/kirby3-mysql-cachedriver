@@ -63,7 +63,7 @@ return [
 
 ### Setup Content-File Cache
 
-Use [Kirby 3 Boost](https://github.com/bnomei/kirby3-boost) to setup a cache for content files.
+Use [Kirby Boost](https://github.com/bnomei/kirby3-boost) to setup a cache for content files.
 
 
 ## Settings
