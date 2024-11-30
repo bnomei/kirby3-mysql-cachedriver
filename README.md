@@ -1,11 +1,8 @@
-# 🐬 Kirby3 MySQL Cache-Driver
+# 🐬 Kirby MySQL Cache-Driver
 
-![Release](https://flat.badgen.net/packagist/v/bnomei/kirby3-mysql-cachedriver?color=ae81ff)
-![Downloads](https://flat.badgen.net/packagist/dt/bnomei/kirby3-mysql-cachedriver?color=272822)
-[![Build Status](https://flat.badgen.net/travis/bnomei/kirby3-mysql-cachedriver)](https://travis-ci.com/bnomei/kirby3-mysql-cachedriver)
-[![Coverage Status](https://flat.badgen.net/coveralls/c/github/bnomei/kirby3-mysql-cachedriver)](https://coveralls.io/github/bnomei/kirby3-mysql-cachedriver) 
-[![Maintainability](https://flat.badgen.net/codeclimate/maintainability/bnomei/kirby3-mysql-cachedriver)](https://codeclimate.com/github/bnomei/kirby3-mysql-cachedriver) 
-[![Twitter](https://flat.badgen.net/badge/twitter/bnomei?color=66d9ef)](https://twitter.com/bnomei)
+![Release](https://flat.badgen.net/packagist/v/bnomei/kirby3-mysql-cachedriver?color=ae81ff&icon=github&label)
+[![Discord](https://flat.badgen.net/badge/discord/bnomei?color=7289da&icon=discord&label)](https://discordapp.com/users/bnomei)
+[![Buymecoffee](https://flat.badgen.net/badge/icon/donate?icon=buymeacoffee&color=FF813F&label)](https://www.buymeacoffee.com/bnomei)
 
 Dolphin - a MySQL Cache Driver for Kirby
 
@@ -41,11 +38,11 @@ mysql : 0.03287492121384
 file : 0.11837792396545
 ```
 
-> ATTENTION: This will create and remove a lot of cache files and sqlite entries
+> ATTENTION: This will create and remove a lot of cache files and SQLite entries
 
 ### No cache when debugging
 
-When Kirbys global debug config is set to `true` the complete plugin cache will be flushed and no caches will be read. But entries will be created. This will make you live easier – trust me.
+When Kirbys global debug config is set to `true` the complete plugin cache will be flushed and no caches will be read. But entries will be created.
 
 ### How to use MySQL Cache with Lapse or Boost
 
